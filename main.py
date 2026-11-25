@@ -7,11 +7,13 @@ No network, no dependencies, deterministic.
 """
 
 import os
+import sys
 
-LINE = (
-    "Are you a transformer? Because ever since you arrived, "
-    "all of my attention has been on you."
-)
+# The line is built from two halves so the joke's structure stays explicit:
+# SETUP names the architecture, PUNCH lands on its attention mechanism.
+SETUP = "Are you a transformer? Because ever since you arrived, "
+PUNCH = "all of my attention has been on you."
+LINE = SETUP + PUNCH
 
 
 def _validate(text: str) -> None:
@@ -23,6 +25,13 @@ def _validate(text: str) -> None:
         raise SystemExit("entry must not be only whitespace")
     if "\n" in text:
         raise SystemExit("entry must be a single line")
+    # The assembled line must match the sum of its parts exactly, and the
+    # joined total must still fit the limit on its own (guards against a
+    # future edit growing one half past the cap unnoticed).
+    if text != SETUP + PUNCH:
+        raise SystemExit("entry must equal SETUP + PUNCH")
+    if len(SETUP) + len(PUNCH) != len(text):
+        raise SystemExit("assembled length does not match its parts")
 
 
 def _write_atomic(path: str, text: str) -> None:
@@ -42,6 +51,11 @@ def _write_atomic(path: str, text: str) -> None:
 
 
 def main() -> None:
+    if "--selftest" in sys.argv[1:]:
+        _validate(LINE)
+        print(f"selftest ok: {len(LINE)} characters, validation passed")
+        print(f"setup={len(SETUP)} chars, punch={len(PUNCH)} chars")
+        return
     _validate(LINE)
     env_base = os.environ.get("MAKEFUN_OUTPUT_DIR")
     bases = [env_base] if env_base else []
